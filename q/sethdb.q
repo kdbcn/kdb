@@ -14,8 +14,8 @@ getcsasyms:{select sym:necode2sym each code,`$name from update `$code from {lowe
 getcsisyms:{ /ex: getcsisyms[] or getcsisyms[`SH] or getcsisyms[`SZ]
  qrystr:$[null x;qs:"CODE:_in_0000001,0000016,0000300,0000905,0000906,0000852,1399001,1399005,1399006,1399106";x=`SH;"IS_INDEX:true;EXCHANGE:CNSESH";x=`SZ;"IS_INDEX:true;EXCHANGE:CNSESZ";qs]; select sym:necode2sym each`$code,`$name from {lower[cols x]xcol x}.j.k[.Q.hg"http://quotes.money.163.com/hs/service/hsindexrank.php?host=/hs/service/hsindexrank.php&page=0&query=",qrystr,"&fields=no,SYMBOL,NAME&sort=SYMBOL&order=asc&count=5000&type=query"]`list};
 
-/读A股、指数的日行情:  getcsbar1d[`000001.SH;.z.D-3;.z.D]
-getcsbar1d:{[mysym;startdate;enddate]`date xasc update sym:mysym,open:?[open>0;open;prevclose],high:?[high>0;high;prevclose],low:?[low>0;low;prevclose],close:?[close>0;close;prevclose],0f^mv,0f^fmv from `date`sym`prevclose`open`high`low`close`volume`amount`mv`fmv xcol("DS FFFFFFFFF";enlist",")0: .Q.hg "http://quotes.money.163.com/service/chddata.html?code=",string[sym2necode mysym],"&start=",ssr[string[startdate];".";""],"&end=",ssr[string enddate;".";""],"&fields=LCLOSE;TOPEN;HIGH;LOW;TCLOSE;VOTURNOVER;VATURNOVER;TCAP;MCAP"};
+/读A股、指数的日行情:  getcsbar[`000001.SH;.z.D-3;.z.D]
+getcsbar:{[mysym;startdate;enddate]`date xasc update sym:mysym,open:?[open>0;open;prevclose],high:?[high>0;high;prevclose],low:?[low>0;low;prevclose],close:?[close>0;close;prevclose],0f^mv,0f^fmv from `date`sym`prevclose`open`high`low`close`volume`amount`mv`fmv xcol("DS FFFFFFFFF";enlist",")0: .Q.hg "http://quotes.money.163.com/service/chddata.html?code=",string[sym2necode mysym],"&start=",ssr[string[startdate];".";""],"&end=",ssr[string enddate;".";""],"&fields=LCLOSE;TOPEN;HIGH;LOW;TCLOSE;VOTURNOVER;VATURNOVER;TCAP;MCAP"};
 
 /读A股最新行情: prevclose昨收价,open开盘价,high最高价,low最低价,close最新价,volume成交量,amount成交金额,mv总市值,fmv流通市值,eps每股收益,zdf涨跌幅,zf震幅,hsl换手率,pe市盈率
 getcsataq:{  /ex: getcsataq[] or getcsataq `000001.SZ or getcsataq `600036.SH
@@ -26,31 +26,31 @@ getcsitaq:{ /ex: getcsitaq[] or getcsitaq[`000001.SH] or getcsitaq[`399001.SZ]
  qrystr:$[null x;qs:"CODE:_in_0000001,0000016,0000300,0000905,0000906,0000852,1399001,1399005,1399006,1399106";-11h=type[x];"CODE:_in_",string[sym2necode x];qs]; select dt:"Z"$time,sym:necode2sym each`$code,name,prevclose:yestclose,open,high,low,close:price,volume,amount:turnover,mv:0f,fmv:0f,eps:0f,zdf:percent,zf:zhenfu,hsl:0f,pe:0f from {lower[cols x]xcol x}.j.k[.Q.hg"http://quotes.money.163.com/hs/service/hsindexrank.php?host=/hs/service/hsindexrank.php&page=0&query=",qrystr,"&fields=no,TIME,SYMBOL,NAME,PRICE,UPDOWN,PERCENT,zhenfu,VOLUME,TURNOVER,YESTCLOSE,OPEN,HIGH,LOW&sort=SYMBOL&order=asc&count=25&type=query"]`list};
 
 /中金所行情
-getcfebar1d:{[mydate]if[-14h<>type mydate;:`error_para];et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
+getcfebar:{[mydate]if[-14h<>type mydate;:`error_para];et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
   if[mydate<2010.04.16;:et];datestr:string[mydate]_/ 4 6;monthstr:6#datestr;daystr:-2#datestr;
  `date xcols update date:mydate from{update {`$string[x],".CFE"}each sym,0f^open,0f^high,0f^low,0f^close,amount*10000.0 from select from x where sym like "*[0-9]"}
  `sym`open`high`low`close xcols`sym`open`high`low`volume`amount`openint`close xcol("S",7#"F";enlist",")0: 
  .Q.hg"http://www.cffex.com.cn/sj/hqsj/rtj/",monthstr,"/",daystr,"/",datestr,"_1.csv"};
 
 /上期所行情
-getshfbar1d:{[mydate]if[-14h<>type mydate;:`error_para];et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
-  r:@[.j.k;.Q.hg"http://www.shfe.com.cn/data/dailydata/kx/kx",(string[mydate]_/4 6),".dat";`];
+getshfbar:{[mydate]if[-14h<>type mydate;:`error_para];et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
+  r:@[.j.k;ssr[;":\"\",";":0,"].Q.hg"http://www.shfe.com.cn/data/dailydata/kx/kx",(string[mydate]_/4 6),".dat";`];
   :$[99h=type r;
-  {select from x where sym like "*[0-9].SHF"}select date:mydate,sym:(`$(upper -2_/:trim PRODUCTID),'DELIVERYMONTH,\:".SHF"),open:{$[y~"";0f;y]}\[OPENPRICE],high:{$[y~"";0f;y]}\[HIGHESTPRICE],low:{$[y~"";0f;y]}\[LOWESTPRICE],close:{$[y~"";0f;y]}\[CLOSEPRICE],volume:{$[y~"";0f;y]}\[VOLUME],amount:0f,openint:{$[y~"";0f;y]}\[OPENINTEREST] from r`o_curinstrument;
+  {select from x where sym like "*[0-9].SHF"}select date:mydate,sym:(`$(upper -2_/:trim PRODUCTID),'DELIVERYMONTH,\:".SHF"),open:OPENPRICE,high:HIGHESTPRICE,low:LOWESTPRICE,close:CLOSEPRICE,volume:VOLUME,amount:0f,openint:OPENINTEREST from select from r[`o_curinstrument] where (10h=type each DELIVERYMONTH)&10h=type each PRODUCTID;
   et];
   };
   
 /上期能源行情
-getinebar1d:{[mydate]if[-14h<>type mydate;:`error_para];et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
+getinebar:{[mydate]if[-14h<>type mydate;:`error_para];et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
   if[mydate<2018.03.26;:et];
-  r:@[.j.k;.Q.hg"http://www.ine.cn/data/dailydata/kx/kx",(string[mydate]_/4 6),".dat";`];
+  r:@[.j.k;ssr[;":\"\",";":0,"] .Q.hg"http://www.ine.cn/data/dailydata/kx/kx",(string[mydate]_/4 6),".dat";`];
   :$[99h=type r;
-  {select from x where sym like "*[0-9].INE"}select date:mydate,sym:(`$(upper -2_/:trim PRODUCTID),'DELIVERYMONTH,\:".INE"),open:{$[y~"";0f;y]}\[OPENPRICE],high:{$[y~"";0f;y]}\[HIGHESTPRICE],low:{$[y~"";0f;y]}\[LOWESTPRICE],close:{$[y~"";0f;y]}\[CLOSEPRICE],volume:{$[y~"";0f;y]}\[VOLUME],amount:0f,openint:{$[y~"";0f;y]}\[OPENINTEREST] from r`o_curinstrument;
+  {select from x where sym like "*[0-9].INE"}select date:mydate,sym:(`$(upper -2_/:trim PRODUCTID),'DELIVERYMONTH,\:".INE"),open:OPENPRICE,high:HIGHESTPRICE,low:LOWESTPRICE,close:CLOSEPRICE,volume:VOLUME,amount:0f,openint:OPENINTEREST from select from r[`o_curinstrument] where (10h=type each DELIVERYMONTH)&10h=type each PRODUCTID;
   et];
   };  
   
 /大商所行情
-getdcebar1d:{[mydate]if[-14h<>type mydate;:`error_para];
+getdcebar:{[mydate]if[-14h<>type mydate;:`error_para];
 	dceprod:`name xkey select `$ssr[;"[0-9]";""]each sym,`$ssr[;"[0-9]";""]each name from 
 	{select from x where sym like "*[0-9][0-9][0-9][0-9]"}flip`sym`name`id!flip last last .j.k 1_-2_ 
     .Q.hg"http://webftcn.hermes.hexun.com/shf/sortlist?block=431&number=1000&title=1&commodityid=0&direction=0&start=0&column=code,name"; /大商所品种及其名称
@@ -65,7 +65,7 @@ czchttp:{[path] r:`:http://www.czce.com.cn "GET ",path," HTTP/1.1\r\nHost: www.c
      r:`:http://www.czce.com.cn "GET ",path," HTTP/1.1\r\nHost: www.czce.com.cn\r\nAccept-Encoding: identity\r\n",(.czce.Cookie::4_first ck),"\r\n\r\n"];
     :(vs[" ";first "\r\n" vs first["\r\n\r\n" vs r]][1];  (first[ss[r;"\r\n\r\n"]]+4)_r);  /(status;body)
  };
-getczcbar1d:{[mydate]if[-14h<>type mydate;:`error_para];dstr:string[mydate]_/4 6; et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
+getczcbar:{[mydate]if[-14h<>type mydate;:`error_para];dstr:string[mydate]_/4 6; et:flip`date`sym`open`high`low`close`volume`amount`openint!"DSFFFFFFF"$\:();
  :`date xcols update date:mydate from{[mydate;x]select {[d;s]s:string[s];i:0;while[(i<9)&(`month$d)>"M"$"20",yymm:string[i],(-3#s);i+:1];`$(-3_s),yymm,".CZC"}[mydate]each sym,open,high,low,close,volume,amount*10000f,openint from x where sym like "*[0-9]"}[mydate]
  $[mydate>2015.09.18;
 	[r:czchttp["/cn/DFSStaticFiles/Future/",(4#dstr),"/",dstr,"/FutureDataDaily.txt"];
@@ -101,44 +101,44 @@ gethxbar:{[mysym;startdate;num;bartype]  /"num:x or -x,x<=1000;  bartype:`1m`5m`
     select date:"D"$8#/:string[`long$time],sym:mysym,time:`timespan$"T"$-6#/:string[`long$time],prevclose:lastclose%rr[4],open%rr[4],high%rr[4],low%rr[4],close%rr[4],volume,amount,openint:openinterest from rrr];
  };
  
-/下载数据并以分列表形式保存在hdb :  setcsbar1d[]
-setcsbar1d:{0N!(.z.T;`start...);
+/下载数据并以分列表形式保存在hdb :  setcsbar[]
+setcsbar:{0N!(.z.T;`start...);
     hdbpath:hsym `$hdbp:ssr[getenv`QHOME;"\\";"/"],"/../hdb"; /hdb路径，如果没有定义QHOME需要修改
 	@[.Q.chk;hdbpath;`];@[system;"l ",hdbp;`];
-	newdatelist:exec date from gettrddt[;.z.D] 1+$[`csbar1d in key `.;2010.01.01^exec last date from select max date from csbar1d;2010.01.01];
+	newdatelist:exec date from gettrddt[;.z.D] 1+$[`csbar in key `.;2010.01.01^exec last date from select max date from csbar;2010.01.01];
     if[0=count newdatelist;:`no.upd.required];
 	dt:exec first dt from getcsitaq[`000001.SH];
 	if[(1=count[newdatelist])&(last[newdatelist]=`date$dt)&(15:01:00<`time$dt);
 		t:select date:`date$dt,sym,prevclose,open,high,low,close,volume,amount,mv,fmv from getcsataq[],getcsitaq[];
-		if[(98h=type t)&(0<count t);(` sv (hdbpath;`csbar1d;`) ) upsert .Q.en[hdbpath] `sym xasc t;0N!(.z.T;`date$dt;`updated.)];
+		if[(98h=type t)&(0<count t);(` sv (hdbpath;`csbar;`) ) upsert .Q.en[hdbpath] `sym xasc t;0N!(.z.T;`date$dt;`updated.)];
 		0N!(.z.T;`stop.);
 		:()];
 	{[mysym;firstdate;lastdate;hdbpath]0N!(.z.T;mysym;firstdate;lastdate);
-	   (` sv (hdbpath;`csbar1d;`) ) upsert .Q.en[hdbpath]select date,sym,prevclose,open,high,low,close,volume,amount,mv,fmv from getcsbar1d[mysym;firstdate;lastdate];
+	   (` sv (hdbpath;`csbar;`) ) upsert .Q.en[hdbpath]select date,sym,prevclose,open,high,low,close,volume,amount,mv,fmv from getcsbar[mysym;firstdate;lastdate];
 	}[;first newdatelist;last newdatelist;hdbpath]each asc distinct exec sym from getcsisyms[],getcsasyms[];
-	@[` sv (hdbpath;`csbar1d;`);`date`sym;`g#];
+	@[` sv (hdbpath;`csbar;`);`date`sym;`g#];
 	0N!(.z.T;`stop.);
  };
 
-/将分列表csbar1d保存为分区表csbar1dp(..p=partitioned) 
-setcsbar1dp:{[startdate;enddate]0N!(.z.T;`start...); 
+/将分列表csbar保存为分区表csbarp(..p=partitioned) 
+setcsbarp:{[startdate;enddate]0N!(.z.T;`start...); 
     hdbpath:hsym `$hdbp:ssr[getenv`QHOME;"\\";"/"],"/../hdb"; /hdb路径，如果没有定义QHOME需要修改
 	.Q.chk hdbpath;system "l ",hdbp;
 	{[dt;hdbpath]0N!(.z.T;dt;hdbpath);
-	 (` sv (hdbpath;`$string dt;`csbar1dp;`) ) set .Q.en[hdbpath]`sym xasc select sym,prevclose,open,high,low,close,volume,amount,mv,fmv from csbar1d where date=dt;
-	 }[;hdbpath]each exec distinct date from csbar1d where date within (startdate;enddate);
+	 (` sv (hdbpath;`$string dt;`csbarp;`) ) set .Q.en[hdbpath]`sym xasc select sym,prevclose,open,high,low,close,volume,amount,mv,fmv from csbar where date=dt;
+	 }[;hdbpath]each exec distinct date from csbar where date within (startdate;enddate);
  };
 
-/下载期货行情数据并以分列表形式保存在hdb :  setcfbar1d[]
-setcfbar1d:{0N!(.z.T;`start...);
+/下载期货行情数据并以分列表形式保存在hdb :  setcfbar[]
+setcfbar:{0N!(.z.T;`start...);
     hdbpath:hsym `$hdbp:ssr[getenv`QHOME;"\\";"/"],"/../hdb"; /hdb路径，如果没有定义QHOME需要修改
 	@[.Q.chk;hdbpath;`];@[system;"l ",hdbp;`];
-	newdatelist:exec date from gettrddt[;.z.D] 1+$[`cfbar1d in key `.;2010.01.01^exec last date from select max date from cfbar1d;2010.01.01];
+	newdatelist:exec date from gettrddt[;.z.D] 1+$[`cfbar in key `.;2010.01.01^exec last date from select max date from cfbar;2010.01.01];
     if[0=count newdatelist;:`no.upd.required];
 	{[dt;hdbpath]0N!(.z.T;dt;hdbpath); 
-	 (` sv (hdbpath;`cfbar1d;`) ) upsert .Q.en[hdbpath]`sym xasc select date,sym,open,high,low,close,volume,amount,openint from 
-            getcfebar1d[dt],getshfbar1d[dt],getinebar1d[dt],getdcebar1d[dt],getczcbar1d[dt];
+	 (` sv (hdbpath;`cfbar;`) ) upsert .Q.en[hdbpath]`sym xasc select date,sym,open,high,low,close,volume,amount,openint from 
+            getcfebar[dt],getshfbar[dt],getinebar[dt],getdcebar[dt],getczcbar[dt];
 	 }[;hdbpath]each newdatelist;
-	@[` sv (hdbpath;`cfbar1d;`);`date`sym;`g#];
+	@[` sv (hdbpath;`cfbar;`);`date`sym;`g#];
 	0N!(.z.T;`stop.);
  };
