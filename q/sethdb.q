@@ -49,15 +49,18 @@ getinebar:{[mydate]if[-14h<>type mydate;:`error_para];et:flip`date`sym`open`high
   et];
   };  
   
-/大商所行情
+  /大商所品种
+getdceprod:{[mydate]dstr:string[mydate]_/4 6;mstr:string neg[1]+`mm$mydate;
+  distinct update{upper `$ssr[string x;"[0-9]";""]}each sym from{select from x where sym like "*[0-9]"}`name`sym xcol
+  ("SS ";enlist"\t")0: ssr[;"%";""]ssr[;"\t\t";"\t"]
+ .Q.hp["http://www.dce.com.cn/publicweb/businessguidelines/exportFutAndOptSettle.html";"application/x-www-form-urlencoded"]
+       "variety=all&trade_type=0&year=",(4#dstr),"&month=",mstr,"&day=",(-2#dstr),"&exportFlag=txt"};
+/ 大商所行情
 getdcebar:{[mydate]if[-14h<>type mydate;:`error_para];
-	dceprod:`name xkey select `$ssr[;"[0-9]";""]each sym,`$ssr[;"[0-9]";""]each name from 
-	{select from x where sym like "*[0-9][0-9][0-9][0-9]"}flip`sym`name`id!flip last last .j.k 1_-2_ 
-    .Q.hg"http://webftcn.hermes.hexun.com/shf/sortlist?block=431&number=1000&title=1&commodityid=0&direction=0&start=0&column=code,name"; /大商所品种及其名称
+	dceprod:`name xkey getdceprod[mydate]; /大商所品种及其名称
     r:.Q.hg"http://www.dce.com.cn/publicweb/quotesdata/exportDayQuotesChData.html?dayQuotes.variety=all&dayQuotes.trade_type=0&year=",string[`year$mydate],"&month=",string[neg[1]+`mm$mydate],"&day=",string[`dd$mydate],"&exportFlag=txt";
     select date:mydate,sym:sym{`$string[x],string[y],".DCE"}'month,open,high,low,close,volume,amount*10000f,openint from 
-    lj[;dceprod]{select from x where month>0}`name`month`open`high`low`close`volume`openint`amount xcol
-    ("SJFFFF    FF F";enlist"\t")0: ssr[ssr[r;",";""];"\t\t";"\t"]};
+    lj[;dceprod]{select from x where month>0}`name`month`open`high`low`close`volume`openint`amount xcol    ("SJFFFF    FF F";enlist"\t")0: ssr[ssr[r;",";""];"\t\t";"\t"] };
 	
 /郑商所行情
 czchttp:{[path] r:`:http://www.czce.com.cn "GET ",path," HTTP/1.1\r\nHost: www.czce.com.cn\r\nAccept-Encoding: identity",$[`Cookie in key `.czce;"\r\n",.czce.Cookie;""],"\r\n\r\n";
