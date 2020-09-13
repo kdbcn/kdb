@@ -105,22 +105,29 @@ gethxbar:{[mysym;startdate;num;bartype]  /"num:x or -x,x<=1000;  bartype:`1m`5m`
  };
  
 /下载数据并以分列表形式保存在hdb :  setcsbar[]
-setcsbar:{0N!(.z.T;`start...);
+setcsbar:{0N!(.z.Z;`setcsbar.start...);
+	startdate:2010.01.01;
     hdbpath:hsym `$hdbp:ssr[getenv`QHOME;"\\";"/"],"/../hdb"; /hdb路径，如果没有定义QHOME需要修改
 	@[.Q.chk;hdbpath;`];@[system;"l ",hdbp;`];
-	newdatelist:exec date from gettrddt[;.z.D] 1+$[`csbar in key `.;2010.01.01^exec last date from select max date from csbar;2010.01.01];
-    if[0=count newdatelist;:`no.upd.required];
+	trddt:gettrddt[2010.01.01;.z.D];
+	maxdt:$[`csbar in key `.;startdate^exec last date from select max date from csbar;startdate];
+	newdatelist:exec date from trddt where date>maxdt;
+    if[0=count newdatelist;0N!(.z.Z;`no.upd.required.);:`no.upd.required];
 	dt:exec first dt from getcsitaq[`000001.SH];
 	if[(1=count[newdatelist])&(last[newdatelist]=`date$dt)&(15:01:00<`time$dt);
-		t:select date:`date$dt,sym,prevclose,open,high,low,close,volume,amount,mv,fmv from getcsataq[],getcsitaq[];
-		if[(98h=type t)&(0<count t);(` sv (hdbpath;`csbar;`) ) upsert .Q.en[hdbpath] `sym xasc t;0N!(.z.T;`date$dt;`updated.)];
-		0N!(.z.T;`stop.);
+		t:select date:`date$dt,sym,prevclose,open,high,low,close,volume,amount,fltshr:fmv%close from getcsataq[],getcsitaq[];
+		if[(98h=type t)&(0<count t);(` sv (hdbpath;`csbar;`) ) upsert .Q.en[hdbpath] `sym xasc t;0N!(.z.Z;`date$dt;`updated.)];
+		0N!(.z.Z;`setcsbar.stop.);
 		:()];
-	{[mysym;firstdate;lastdate;hdbpath]0N!(.z.T;mysym;firstdate;lastdate);
-	   (` sv (hdbpath;`csbar;`) ) upsert .Q.en[hdbpath]select date,sym,prevclose,open,high,low,close,volume,amount,mv,fmv from getcsbar[mysym;firstdate;lastdate];
-	}[;first newdatelist;last newdatelist;hdbpath]each asc distinct exec sym from getcsisyms[],getcsasyms[];
+		
+	{[mysym;firstdate;lastdate;hdbpath]
+		firstdate:firstdate^1+last asc exec date from csbar where sym=mysym;
+		if[firstdate>lastdate;0N!(.z.Z;mysym;firstdate;lastdate;`no.upd);:()];
+		0N!(.z.Z;mysym;firstdate;lastdate);
+	   (` sv (hdbpath;`csbar;`) ) upsert .Q.en[hdbpath]select date,sym,prevclose,open,high,low,close,volume,amount,fltshr:fmv%close from getcsbar[mysym;firstdate;lastdate];
+	}[;startdate;exec last date from trddt;hdbpath]each asc distinct exec sym from getcsisyms[],getcsasyms[];
 	@[` sv (hdbpath;`csbar;`);`date`sym;`g#];
-	0N!(.z.T;`stop.);
+	0N!(.z.Z;`setcsbar.stop.);
  };
 
 /将分列表csbar保存为分区表csbarp(..p=partitioned) 
